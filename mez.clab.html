@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Clickable Elements on Sphere</title>
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('DP Greed 3.000/WOFF/GreedTRIAL-SemiBold.woff') format('woff');
+        }
+
+        body {
+            margin: 0;
+            font-family: 'CustomFont', Arial, sans-serif;
+            letter-spacing: -2px;
+            font-weight: bold;
+        }
+        canvas { display: block; }
+        
+        #clickableImage {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            cursor: pointer;
+            height: 20px;
+            opacity: 0.7;
+            filter: blur(0.5px);
+        }
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            pointer-events: none; /* Ensure overlay does not interfere with clicks */
+            z-index: 20; /* Overlay should be above everything */
+        }
+        #overlay img {
+            display: block;
+            width: 20vw; /* Dimensione più grande per l'anteprima */
+            height: auto;
+        }
+
+        .marquee, .header-bar {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            background-color: rgb(255, 0, 0, 0.7);
+            color: rgb(255, 255, 255, 0.7);
+            text-shadow: 0 0 5px rgb(255, 255, 255, 0.7); /* Add text shadow for blur effect */
+            font-size: 1em;
+            overflow: hidden;
+            z-index: 9999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 35px; /* Imposta l'altezza fissa */
+            line-height: 50px; /* Imposta la line-height uguale all'altezza */
+
+        }
+
+
+        .header-bar {
+            top: 0;
+            justify-content: space-between;
+        }
+
+        .header-bar .title {
+            flex: 1;
+            margin-left: 30px;
+        }
+
+        .header-bar .icons {
+            display: flex;
+            gap: 15px;
+            margin-right: 30px;
+            margin-top: 15px;
+        }
+
+        .header-bar .icons img {
+            width: 24px;
+            height: 24px;
+            opacity: 0.7;
+            filter: blur(0.5px);
+        }
+
+        .marquee {
+            bottom: 0;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .marquee p {
+            display: inline-block;
+            padding-left: 100%; /* Sposta il testo fuori dalla vista inizialmente */
+            animation: marquee 20s linear infinite;
+            z-index: 9999;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .fullscreen-text {
+            position: fixed;
+            text-align: left;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(0, 0, 0, 0.5);
+            color: rgb(255, 255, 255, 0.5);
+            text-shadow: 0 0 5px rgb(255, 255, 255, 0.5); /* Add text shadow for blur effect */
+            font-size: 6em;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            display: none;
+            z-index: 999;
+            margin: 0;
+            overflow-y: auto;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <div class="title" id="mezTitle">MEZ.CLAB</div>
+        <a href="index.html"><img id="clickableImage" src="clab.png" alt="Clickable Image" height="24">
+        </a>
+        <div class="icons">
+            <a href="https://www.facebook.com" target="_blank"><img src="assets/facebook.png" alt="Facebook"></a>
+            <a href="https://www.instagram.com" target="_blank"><img src="assets/instagram.png" alt="Instagram"></a>
+            <a href="https://www.spotify.com" target="_blank"><img src="assets/spotify.png" alt="Spotify"></a>
+            <a href="https://www.soundcloud.com" target="_blank"><img src="assets/soundcloud.png" alt="SoundCloud"></a>
+        </div>
+    </div>
+
+    <div id="fullscreenText" class="fullscreen-text">
+        <p><span id="exitFullscreen" style="cursor: pointer; text-decoration: underline;">MEZ.CLAB</span> <br>
+             è interazione nello spazio ibrido della rete. Un AMBIENTE fluido per esplorare le corrispondenze segrete di culture sonore diverse</p>
+    </div>
+    
+    
+    <div class="marquee">
+        <p>Upcoming Event - Inter.Session - 15/LUGLIO - Tempio del Futuro Perduto (MI) - RSVP on instagram</p>
+    </div>
+    <!-- Immagine cliccabile -->
+    
+
+    
+
+    <!-- Overlay per l'anteprima della GIF -->
+    <div id="overlay">
+        <img id="gifPreview" src="" alt="GIF Preview">
+    </div>
+
+    <!-- Three.js script -->
+    <script type="module">
+        import * as THREE from "https://cdn.skypack.dev/three@0.133.1/build/three.module.js";
+        import { OrbitControls } from "https://cdn.skypack.dev/three@0.133.1/examples/jsm/controls/OrbitControls.js";
+
+        // Scene, camera, renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // OrbitControls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Enable damping (inertia)
+        controls.dampingFactor = 0.05; // Damping factor
+        controls.rotateSpeed = 0.5; // Rotate speed
+
+        // Elements clickable (using circles with images)
+        const clickableElements = [];
+        const numElements = 20; // Number of clickable elements (circles)
+        const radius = 5; // Radius of the sphere
+
+        // Array of image URLs
+        const imageUrls = [
+            'assets/1.gif',
+            'assets/2.gif',
+            'assets/3.gif',
+            'assets/4.gif',
+            'assets/5.gif',
+            'assets/6.gif',
+            'assets/7.gif',
+            'assets/8.gif',
+            'assets/9.gif',
+            'assets/10.gif',
+            'assets/11.gif',
+            'assets/12.gif',
+            'assets/13.gif',
+            'assets/14.gif',
+            'assets/15.gif',
+            'assets/16.gif',
+            'assets/17.gif',
+            'assets/18.gif',
+            'assets/19.gif',
+            'assets/20.gif',
+            // Add more image URLs as needed
+        ];
+
+        // Overlay element
+        const overlay = document.getElementById('overlay');
+        const gifPreview = document.getElementById('gifPreview');
+
+        // Function to handle mouseover and mouseout on sphere elements
+        function onHover(event) {
+            // Check if there's an intersection with clickable elements
+            const intersects = getIntersects(event);
+
+            // Change material opacity on hover
+            if (intersects.length > 0) {
+                intersects[0].object.material.opacity = 0.3; // Reduce opacity to 50%
+            } else {
+                // Restore original opacity if not hovering over an element
+                clickableElements.forEach(element => {
+                    element.material.opacity = 1; // Full opacity
+                });
+            }
+        }
+
+        
+
+        // Event listeners for mouse events
+        window.addEventListener('mousemove', onHover);
+
+        // Function to handle click on sphere elements
+        function onClick(event) {
+            // Check if there's an intersection with clickable elements
+            const intersects = getIntersects(event);
+
+            if (intersects.length > 0) {
+                // Show overlay with GIF preview of the clicked element
+                const imageUrl = intersects[0].object.userData.imageUrl;
+                gifPreview.src = imageUrl;
+                overlay.style.display = 'block';
+            } else {
+                // Hide overlay if clicked outside of any element
+                overlay.style.display = 'none';
+            }
+        }
+
+        // Event listener for click on window
+        window.addEventListener('click', onClick);
+
+        // Function to get intersections with clickable elements
+        function getIntersects(event) {
+            const mouse = new THREE.Vector2();
+            const raycaster = new THREE.Raycaster();
+
+            // Calculate mouse position in normalized device coordinates (-1 to +1)
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Update the picking ray with the camera and mouse position
+            raycaster.setFromCamera(mouse, camera);
+
+            // Calculate objects intersecting the picking ray
+            return raycaster.intersectObjects(clickableElements);
+        }
+
+        for (let i = 0; i < numElements; i++) {
+            const phi = Math.acos(-1 + (2 * i) / numElements); // Distribute phi evenly
+            const theta = Math.sqrt(numElements * Math.PI) * phi; // Distribute theta evenly
+
+            const elementGeometry = new THREE.CircleGeometry(1.5, 32); // Circle geometry with radius 1.5 and 32 segments
+
+            // Load texture for each element
+            const texture = new THREE.TextureLoader().load(imageUrls[i % imageUrls.length]);
+            const elementMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 1 });
+
+            const element = new THREE.Mesh(elementGeometry, elementMaterial);
+
+            element.position.setFromSphericalCoords(radius, phi, theta);
+            element.lookAt(0, 0, 0); // Look at the center of the scene
+            scene.add(element);
+            clickableElements.push(element);
+
+            // Store image URL in userData
+            element.userData = { imageUrl: imageUrls[i % imageUrls.length] };
+        }
+
+        // Auto rotation variables
+        let rotationSpeed = 0.001;
+
+        // Function to update rotation
+        function update() {
+            scene.rotation.y += rotationSpeed;
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update(); // Update controls with damping
+            update(); // Update rotation
+            renderer.render(scene, camera);
+        }
+
+        camera.position.set(0, 0, 1); // Ensure camera is positioned to view the scene properly
+        animate();
+
+        document.getElementById('mezTitle').addEventListener('click', () => {
+            document.getElementById('fullscreenText').style.display = 'block';
+        });
+
+        document.getElementById('exitFullscreen').addEventListener('click', () => {
+            document.getElementById('fullscreenText').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

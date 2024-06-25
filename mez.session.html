@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Three.js WebGL - Multiple Elements</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('DP Greed 3.000/WOFF/GreedTRIAL-SemiBold.woff') format('woff');
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'CustomFont', sans-serif;
+        }
+
+        #content {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #c {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .list-item {
+            width: 33%;
+            height: 33%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .list-item > div:first-child {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #overlay-image {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            cursor: pointer;
+            height: 20px;
+            opacity: 0.7;
+            filter: blur(0.5px);
+        }
+
+        .player-buttons {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            width: 150px; /* Adjusted width to accommodate icons */
+            margin-top: 20px; /* Optional: Adds space between content and player */
+            display: none; /* Initially hidden */
+        }
+
+        .player-button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .player-button svg {
+            width: 20px; /* Adjust icon size as needed */
+            height: 20px; /* Adjust icon size as needed */
+            fill: white; /* Icon color */
+            vertical-align: middle;
+        }
+
+        #overlay-text {
+            position: fixed;
+            text-align: left;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(0, 0, 0, 0.5);
+            color: rgb(255, 255, 255, 0.5);
+            text-shadow: 0 0 5px rgb(255, 255, 255, 0.5); /* Add text shadow for blur effect */
+            font-size: 6em;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            display: none;
+            z-index: 999;
+            margin: 0;
+            overflow-y: auto;
+        }
+
+        #overlay-text span {
+            cursor: pointer;
+            text-decoration: underline;
+            
+        }
+
+        .marquee, .header-bar {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            background-color: rgb(255, 0, 0, 0.7);
+            color: rgb(255, 255, 255, 0.7);
+            text-shadow: 0 0 5px rgb(255, 255, 255, 0.7); /* Add text shadow for blur effect */
+            font-size: 1em;
+            overflow: hidden;
+            z-index: 9999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 35px; /* Imposta l'altezza fissa */
+            line-height: 50px; /* Imposta la line-height uguale all'altezza */
+        }
+
+        .header-bar {
+            top: 0;
+            justify-content: space-between;
+        }
+
+        .header-bar .title {
+            flex: 1;
+            margin-left: 30px;
+        }
+
+        .header-bar .icons {
+            display: flex;
+            gap: 15px;
+            margin-right: 30px;
+            margin-top: 15px;
+        }
+
+        .header-bar .icons img {
+            width: 24px;
+            height: 24px;
+            opacity: 0.7;
+            filter: blur(0.5px);
+        }
+
+        .marquee {
+            bottom: 0;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .marquee p {
+            display: inline-block;
+            padding-left: 100%; /* Sposta il testo fuori dalla vista inizialmente */
+            animation: marquee 20s linear infinite;
+            z-index: 9999;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .fullscreen-text {
+            position: fixed;
+            text-align: left;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(0, 0, 0, 0.5);
+            color: rgb(255, 255, 255, 0.5);
+            text-shadow: 0 0 5px rgb(255, 255, 255, 0.5); /* Add text shadow for blur effect */
+            font-size: 6em;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            display: none;
+            z-index: 999;
+            margin: 0;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div class="header-bar">
+    <div class="title" id="mezTitle">MEZ.SESSION</div>
+    <a href="index.html"><img id="overlay-image" src="session.png" alt="Overlay Image"></a>
+    <div class="icons">
+        <a href="https://www.facebook.com" target="_blank"><img src="assets/facebook.png" alt="Facebook"></a>
+        <a href="https://www.instagram.com" target="_blank"><img src="assets/instagram.png" alt="Instagram"></a>
+        <a href="https://www.spotify.com" target="_blank"><img src="assets/spotify.png" alt="Spotify"></a>
+        <a href="https://www.soundcloud.com" target="_blank"><img src="assets/soundcloud.png" alt="SoundCloud"></a>
+    </div>
+</div>
+
+<div id="fullscreenText" class="fullscreen-text">
+    <p><span id="exitFullscreen" style="cursor: pointer; text-decoration: underline;">MEZ.SESSION</span> <br>
+        è UN DIALOGO TRA MONDI GEOGRAFICAMENTE LONTANI, MA ARTISTICAMENTE VICINI, ALL'INTERNO DELLA DIMENSIONE COLLETTIVA  DELLA RETE..</p>
+</div>
+
+<div class="marquee">
+    <p>Upcoming Event - Inter.Session - 15/LUGLIO - Tempio del Futuro Perduto (MI) - RSVP on instagram</p>
+</div>
+
+<div id="content"></div>
+
+<div class="player-buttons">
+    <button id="back-button" class="player-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    <button id="prev-button" class="player-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+    <button id="play-button" class="player-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+    <button id="next-button" class="player-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+
+<div id="overlay-text"></div>
+<audio id="audio-player" src="" preload="auto"></audio>
+
+<script type="module">
+    import * as THREE from "https://cdn.skypack.dev/three@0.133.1/build/three.module.js";
+
+    let canvas, renderer;
+    const scenes = [];
+    const scales = [];
+    const rotationSpeeds = [];
+    const textures = [];
+    const audioPaths = []; // Array to store audio paths
+    const texts = []; // Array to store texts
+    let selectedSphereIndex = null;
+    let singleScene, singleCamera, singleSphere;
+    let isPlaying = false;
+    let currentSceneIndex = 0;
+    const totalScenes = 9;
+
+    init();
+
+    function init() {
+        canvas = document.getElementById('c');
+
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        renderer.setClearColor(0x000000, 1);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        const geometry = new THREE.SphereBufferGeometry(1.2, 32, 32);
+        const textureLoader = new THREE.TextureLoader();
+
+        for (let i = 0; i < totalScenes; i++) {
+            textures[i] = textureLoader.load(`assets/texture${i + 1}.jpg`);
+            audioPaths[i] = `assets/audio${i + 1}.mp3`; // Add audio paths
+        }
+
+        const content = document.getElementById('content');
+
+        for (let i = 0; i < totalScenes; i++) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            const element = document.createElement('div');
+            element.className = 'list-item';
+
+            const sceneElement = document.createElement('div');
+            element.appendChild(sceneElement);
+
+            scene.userData.element = sceneElement;
+            content.appendChild(element);
+
+            const camera = new THREE.PerspectiveCamera(40, 1, 1, 10);
+            camera.position.z = 8;
+            scene.userData.camera = camera;
+
+            const material = new THREE.MeshBasicMaterial({ map: textures[i] });
+            const sphere = new THREE.Mesh(geometry, material);
+            scene.userData.mesh = sphere;
+
+            scene.add(sphere);
+
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 5, 5).normalize();
+            scene.add(light);
+
+            scenes.push(scene);
+            scales.push({ target: 1, current: 1 });
+            rotationSpeeds.push((Math.random() * 0.002) + 0.001);
+
+            element.addEventListener('mouseenter', function() {
+                scales[i].target = 1.5;
+            });
+
+            element.addEventListener('mouseleave', function() {
+                scales[i].target = 1;
+            });
+
+            element.addEventListener('click', function() {
+                zoomToSphere(i);
+            });
+        }
+
+        renderer.setAnimationLoop(animate);
+
+        const overlayImage = document.getElementById('overlay-image');
+        overlayImage.addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+
+        const backButton = document.getElementById('back-button');
+        backButton.addEventListener('click', function() {
+            resetView();
+        });
+
+        const playButton = document.getElementById('play-button');
+        playButton.addEventListener('click', function() {
+            togglePlay();
+        });
+
+        const prevButton = document.getElementById('prev-button');
+        prevButton.addEventListener('click', function() {
+            prevScene();
+        });
+
+        const nextButton = document.getElementById('next-button');
+        nextButton.addEventListener('click', function() {
+            nextScene();
+        });
+
+        // Gestione della visibilità del testo fullscreen
+    const mezTitle = document.getElementById('mezTitle');
+    const fullscreenText = document.getElementById('fullscreenText');
+    const exitFullscreen = document.getElementById('exitFullscreen');
+
+    mezTitle.addEventListener('click', () => {
+        fullscreenText.style.display = 'block';
+    });
+
+    exitFullscreen.addEventListener('click', () => {
+        fullscreenText.style.display = 'none';
+    });
+    }
+
+    function zoomToSphere(index) {
+    if (!isPlaying) {
+        selectedSphereIndex = index;
+        singleScene = new THREE.Scene();
+        singleScene.background = new THREE.Color(0x000000);
+
+        const geometry = new THREE.SphereBufferGeometry(1.2, 32, 32).scale(-1, 1, 1);
+        const material = new THREE.MeshBasicMaterial({ map: textures[index] });
+        singleSphere = new THREE.Mesh(geometry, material);
+
+        singleScene.add(singleSphere);
+
+        singleCamera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
+        singleCamera.position.set(0, 0, 1);
+
+        // Mostra il tasto "Back"
+        document.getElementById('back-button').style.display = 'block';
+
+        document.getElementById('content').style.display = 'none';
+        document.getElementById('overlay-image').style.display = 'none';
+        document.querySelector('.player-buttons').style.display = 'flex';
+
+        playAudio(index);
+    }
+}
+
+    function resetView() {
+        selectedSphereIndex = null;
+        document.getElementById('content').style.display = 'flex';
+        document.getElementById('overlay-image').style.display = 'block';
+        document.getElementById('overlay-text').style.display = 'none';
+        document.getElementById('back-button').style.display = 'none';
+        document.querySelector('.player-buttons').style.display = 'none';
+
+        stopAudio();
+    }
+
+    function togglePlay() {
+    isPlaying = !isPlaying;
+    const playButton = document.getElementById('play-button');
+    const audioPlayer = document.getElementById('audio-player');
+    if (isPlaying) {
+        playButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 19h4V5h-4v14zm-6-14v14h4V5h-4z"/></svg>'; // SVG per l'icona Pausa
+        playAudio(selectedSphereIndex); // Avvia l'audio della sfera selezionata
+        audioPlayer.play(); // Avvia anche l'audio
+    } else {
+        playButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // SVG per l'icona Play
+        audioPlayer.pause(); // Metti in pausa l'audio
+    }
+}
+
+    function prevScene() {
+        currentSceneIndex = (currentSceneIndex - 1 + totalScenes) % totalScenes;
+        zoomToSphere(currentSceneIndex);
+    }
+
+    function nextScene() {
+        currentSceneIndex = (currentSceneIndex + 1) % totalScenes;
+        zoomToSphere(currentSceneIndex);
+    }
+
+    function playAudio(index) {
+    const audioPlayer = document.getElementById('audio-player');
+    audioPlayer.src = audioPaths[index]; // Imposta la sorgente dell'audio
+    // Non chiamare audioPlayer.play() qui
+}
+
+    function stopAudio() {
+        const audioPlayer = document.getElementById('audio-player');
+        audioPlayer.pause();
+        audioPlayer.src = '';
+    }
+
+    function showText(index) {
+        const overlayText = document.getElementById('overlay-text');
+        overlayText.innerHTML = `<span>${texts[index]}</span>`;
+        overlayText.style.display = 'block';
+    }
+
+    function animate() {
+        updateSize();
+
+        renderer.setScissorTest(true);
+
+        if (selectedSphereIndex !== null) {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+
+            renderer.setViewport(0, 0, width, height);
+            renderer.setScissor(0, 0, width, height);
+
+            singleCamera.aspect = width / height;
+            singleCamera.updateProjectionMatrix();
+
+            if (isPlaying) {
+                singleSphere.rotation.y += 0.01; // Adjust rotation speed as needed
+            }
+
+            renderer.render(singleScene, singleCamera);
+        } else {
+            scenes.forEach(function (scene, i) {
+                scene.children[0].rotation.y += rotationSpeeds[i];
+
+                const element = scene.userData.element;
+                const rect = element.getBoundingClientRect();
+
+                if (rect.bottom < 0 || rect.top > renderer.domElement.clientHeight ||
+                    rect.right < 0 || rect.left > renderer.domElement.clientWidth) {
+                    return;
+                }
+
+                const width = rect.right - rect.left;
+                const height = rect.bottom - rect.top;
+                const left = rect.left;
+                const bottom = renderer.domElement.clientHeight - rect.bottom;
+
+                renderer.setViewport(left, bottom, width, height);
+                renderer.setScissor(left, bottom, width, height);
+
+                const camera = scene.userData.camera;
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+
+                const scale = scales[i];
+                scale.current += (scale.target - scale.current) * 0.1;
+                scene.userData.mesh.scale.set(scale.current, scale.current, scale.current);
+
+                renderer.render(scene, camera);
+            });
+        }
+    }
+
+    function updateSize() {
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        if (canvas.width !== width || canvas.height !== height) {
+            renderer.setSize(width, height, false);
+        }
+    }
+</script>
+
+</body>
+</html>

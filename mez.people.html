@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Three.js WebGL - Multiple Elements</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('DP Greed 3.000/WOFF/GreedTRIAL-SemiBold.woff') format('woff');
+        }
+
+        body {
+            margin: 0;
+            font-family: 'CustomFont', Arial, sans-serif;
+            letter-spacing: -2px;
+            font-weight: bold;
+        }
+
+        #content {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #c {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .list-item {
+            width: 20%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .list-item > div:first-child {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #clickableImage {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            cursor: pointer;
+            height: 20px;
+            opacity: 0.7;
+            filter: blur(0.5px);
+        }
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            pointer-events: none; /* Ensure overlay does not interfere with clicks */
+            z-index: 20; /* Overlay should be above everything */
+        }
+        #overlay img {
+            display: block;
+            width: 20vw; /* Dimensione più grande per l'anteprima */
+            height: auto;
+        }
+
+        .marquee, .header-bar {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            background-color: rgb(255, 0, 0, 0.7);
+            color: rgb(255, 255, 255, 0.7);
+            text-shadow: 0 0 5px rgb(255, 255, 255, 0.7); /* Add text shadow for blur effect */
+            font-size: 1em;
+            overflow: hidden;
+            z-index: 9999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 35px; /* Imposta l'altezza fissa */
+            line-height: 50px; /* Imposta la line-height uguale all'altezza */
+
+        }
+
+
+        .header-bar {
+            top: 0;
+            justify-content: space-between;
+        }
+
+        .header-bar .title {
+            flex: 1;
+            margin-left: 30px;
+        }
+
+        .header-bar .icons {
+            display: flex;
+            gap: 15px;
+            margin-right: 30px;
+            margin-top: 15px;
+        }
+
+        .header-bar .icons img {
+            width: 24px;
+            height: 24px;
+            opacity: 0.7;
+            filter: blur(0.5px);
+        }
+
+        .marquee {
+            bottom: 0;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .marquee p {
+            display: inline-block;
+            padding-left: 100%; /* Sposta il testo fuori dalla vista inizialmente */
+            animation: marquee 20s linear infinite;
+            z-index: 9999;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .fullscreen-text {
+            position: fixed;
+            text-align: left;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(0, 0, 0, 0.5);
+            color: rgb(255, 255, 255, 0.5);
+            text-shadow: 0 0 5px rgb(255, 255, 255, 0.5); /* Add text shadow for blur effect */
+            font-size: 6em;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            display: none;
+            z-index: 999;
+            margin: 0;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div id="content"></div>
+
+<div class="header-bar">
+    <div class="title" id="mezTitle">MEZ.PEOPLE</div>
+    <a href="index.html"><img id="clickableImage" src="people.png" alt="Clickable Image" height="24">
+    <div class="icons">
+        <a href="https://www.facebook.com" target="_blank"><img src="assets/facebook.png" alt="Facebook"></a>
+        <a href="https://www.instagram.com" target="_blank"><img src="assets/instagram.png" alt="Instagram"></a>
+        <a href="https://www.spotify.com" target="_blank"><img src="assets/spotify.png" alt="Spotify"></a>
+        <a href="https://www.soundcloud.com" target="_blank"><img src="assets/soundcloud.png" alt="SoundCloud"></a>
+    </div>
+</div>
+
+<div class="marquee">
+    <p>Upcoming Event - Inter.Session - 15/LUGLIO - Tempio del Futuro Perduto (MI) - RSVP on instagram</p>
+</div>
+
+<div id="fullscreenText" class="fullscreen-text">
+    <p><span id="exitFullscreen" style="cursor: pointer; text-decoration: underline;">MEZ.PEOPLE</span> è UN COLLETTIVO  artisti eterogenei CHe celebra la differenza E CHE cerca di far emergere i punti di contatto </p>
+</div>
+
+<script type="module">
+    import * as THREE from "https://cdn.skypack.dev/three@0.133.1/build/three.module.js";
+    import { OrbitControls } from "https://cdn.skypack.dev/three@0.133.1/examples/jsm/controls/OrbitControls.js";
+    import { EffectComposer } from "https://cdn.skypack.dev/three@0.133.1/examples/jsm/postprocessing/EffectComposer.js";
+    import { RenderPass } from "https://cdn.skypack.dev/three@0.133.1/examples/jsm/postprocessing/RenderPass.js";
+    import { BloomPass } from "https://cdn.skypack.dev/three@0.133.1/examples/jsm/postprocessing/BloomPass.js";
+    import { FilmPass } from "https://cdn.skypack.dev/three@0.133.1/examples/jsm/postprocessing/FilmPass.js";
+
+    let canvas, renderer;
+    const scenes = [];
+    const composers = [];
+    const scales = [];
+    const rotationSpeeds = [];
+
+    const overlayTexts = [
+        'DJ',
+        'PROJECT MANAGER',
+        '3D DESIGNER',
+        'WEB DESIGNER',
+        'DJ'
+    ];
+
+    const redirectUrls = [
+        'https://www.instagram.com/tziper/',
+        'https://www.instagram.com/elisazanin_/',
+        'https://www.instagram.com/burtoo/',
+        'https://www.instagram.com/fonzo_bruno/',
+        'https://www.instagram.com/vorbeisingende/'
+    ];
+
+    init();
+
+    function init() {
+        canvas = document.getElementById('c');
+
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        renderer.setClearColor(0x000000, 1);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        
+        const geometries = [
+            new THREE.SphereBufferGeometry(1.2, 32, 32),
+        ];
+
+        const texturePaths = [
+            'assets/1x/Risorsa 14.png',
+            'assets/1x/Risorsa 15.png',
+            'assets/1x/Risorsa 16.png',
+            'assets/1x/Risorsa 17.png',
+            'assets/1x/Risorsa 18.png'
+        ];
+
+        const content = document.getElementById('content');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('mezTitle').addEventListener('click', function() {
+                showFullscreenText();
+            });
+        });
+
+        for (let i = 0; i < 5; i++) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            const element = document.createElement('div');
+            element.className = 'list-item';
+
+            const sceneElement = document.createElement('div');
+            element.appendChild(sceneElement);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+
+            const text = document.createElement('p');
+            text.innerText = overlayTexts[i];
+            overlay.appendChild(text);
+
+            element.appendChild(overlay);
+
+            scene.userData.element = sceneElement;
+            content.appendChild(element);
+
+            const camera = new THREE.PerspectiveCamera(40, 1, 1, 10);
+            camera.position.z = 8;
+            scene.userData.camera = camera;
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; // Enable damping (inertia)
+            controls.dampingFactor = 0.05; // Damping factor
+            controls.rotateSpeed = 0.5; // Rotate speed
+            controls.enableZoom = false; // Disable zoom
+            controls.enablePan = false; // Disable panning
+            scene.userData.controls = controls;
+
+            const geometry = geometries[geometries.length * Math.random() | 0];
+
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(texturePaths[i], function(texture) {
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(2, 1);
+            });
+
+            const material = new THREE.MeshBasicMaterial({ map: texture });
+            const sphere = new THREE.Mesh(geometry, material);
+            scene.userData.mesh = sphere;
+
+            scene.add(sphere);
+
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 5, 5).normalize();
+            scene.add(light);
+
+            const composer = new EffectComposer(renderer);
+            const renderPass = new RenderPass(scene, camera);
+            composer.addPass(renderPass);
+
+            const bloomPass = new BloomPass(1.25);
+            composer.addPass(bloomPass);
+
+            const filmPass = new FilmPass(0.35, 0.025, 648, false);
+            composer.addPass(filmPass);
+
+            scenes.push(scene);
+            composers.push(composer);
+            scales.push({ target: 1, current: 1 });
+            rotationSpeeds.push(0.01);
+
+            element.addEventListener('mouseenter', function() {
+                scales[i].target = 1.5;
+            });
+
+            element.addEventListener('mouseleave', function() {
+                scales[i].target = 1;
+            });
+
+            element.addEventListener('click', function() {
+    window.open(redirectUrls[i], '_blank');
+});
+        }
+
+        renderer.setAnimationLoop(animate);
+    }
+
+    function showFullscreenText() {
+        const fullscreenText = document.getElementById('fullscreenText');
+        fullscreenText.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Disable body scrolling when text is visible
+    }
+
+    function updateSize() {
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        if (canvas.width !== width || canvas.height !== height) {
+            renderer.setSize(width, height, false);
+        }
+    }
+
+    function animate() {
+        updateSize();
+
+        canvas.style.transform = `translateY(${window.scrollY}px)`;
+
+        renderer.setScissorTest(true);
+
+        scenes.forEach(function (scene, i) {
+            scene.children[0].rotation.y += rotationSpeeds[i];
+
+            const element = scene.userData.element;
+            const rect = element.getBoundingClientRect();
+
+            if (rect.bottom < 0 || rect.top > renderer.domElement.clientHeight ||
+                rect.right < 0 || rect.left > renderer.domElement.clientWidth) {
+                return;
+            }
+
+            const width = rect.right - rect.left;
+            const height = rect.bottom - rect.top;
+            const left = rect.left;
+            const bottom = renderer.domElement.clientHeight - rect.bottom;
+
+            renderer.setViewport(left, bottom, width, height);
+            renderer.setScissor(left, bottom, width, height);
+
+            const camera = scene.userData.camera;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
+            const scale = scales[i];
+            scale.current += (scale.target - scale.current) * 0.1;
+            scene.userData.mesh.scale.set(scale.current, scale.current, scale.current);
+
+            composers[i].setSize(width, height);
+            composers[i].render();
+            
+            scene.userData.controls.update();
+        });
+    }
+
+    function scaleSphere(sphere, scale) {
+        sphere.scale.set(scale, scale, scale);
+    }
+</script>
+
+
+
+<script>document.getElementById('exitFullscreen').addEventListener('click', function() {
+    document.getElementById('fullscreenText').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Abilita lo scroll del body quando il testo è nascosto
+});</script>
+
+</body>
+</html>
+
